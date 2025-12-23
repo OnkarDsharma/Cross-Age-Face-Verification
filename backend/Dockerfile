@@ -25,8 +25,8 @@ COPY . .
 # Create uploads directory
 RUN mkdir -p /tmp/uploads
 
-# Expose port
-EXPOSE 10000
+# Expose port (Render uses $PORT environment variable)
+EXPOSE $PORT
 
-# Start command
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "10000"]
+# Start command - use $PORT from environment
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-10000}

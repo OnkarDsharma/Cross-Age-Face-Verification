@@ -1,7 +1,7 @@
 services:
   - type: web
     name: face-verification-api
-    env: docker
+    runtime: docker  # Changed from "env: docker"
     region: oregon
     plan: free
     dockerfilePath: ./backend/Dockerfile
@@ -25,5 +25,3 @@ services:
         value: /tmp/uploads
       - key: MODEL_PATH
         value: Facenet512
-      - key: PORT
-        value: "10000"
