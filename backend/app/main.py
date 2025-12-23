@@ -55,7 +55,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://earnest-treacle-9f76c3.netlify.app/",  # Will be updated with actual URL
+        "https://earnest-treacle-9f76c3.netlify.app",  # Will be updated with actual URL
         "http://localhost:3000",
         "http://127.0.0.1:3000"
     ],

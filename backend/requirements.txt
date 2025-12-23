@@ -14,6 +14,5 @@ numpy==1.26.4
 tensorflow==2.15.0
 deepface==0.0.93
 tf-keras==2.15.0
-opencv-python==4.10.0.84
+opencv-python-headless==4.10.0.84
 certifi==2024.8.30
-```

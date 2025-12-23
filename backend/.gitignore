@@ -1,9 +1,22 @@
+<<<<<<< HEAD
+node_modules/
+frontend/node_modules/
+venv/
+__pycache__/
+.env
+=======
 ﻿__pycache__/
 *.py[cod]
+*$py.class
+*.so
 venv/
+env/
 .env
+.env.local
 uploads/*
 !uploads/.gitkeep
 *.log
 test_*.py
-*.h5
+.DS_Store
+*.pyc
+>>>>>>> 8e8af77 (Initial deployment of face verification API)

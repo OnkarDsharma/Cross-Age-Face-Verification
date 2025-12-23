@@ -2,6 +2,8 @@ services:
   - type: web
     name: face-verification-api
     env: python
+    region: oregon  # or your preferred region
+    plan: free  # or starter
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
@@ -11,7 +13,15 @@ services:
         value: face_verification_db
       - key: SECRET_KEY
         sync: false
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "30"
       - key: VERIFICATION_THRESHOLD
-        value: "0.55"
+        value: "0.49"
       - key: DEEPFACE_MODEL
+        value: Facenet512
+      - key: UPLOAD_DIR
+        value: /tmp/uploads
+      - key: MODEL_PATH
         value: Facenet512
