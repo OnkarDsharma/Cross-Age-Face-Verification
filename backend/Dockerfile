@@ -1,38 +1,24 @@
-﻿FROM python:3.11-slim-bookworm
+﻿FROM python:3.11-slim
 
-# Set working directory
 WORKDIR /app
 
-# Install system dependencies in a single layer with retries
-RUN apt-get clean && \
-    rm -rf /var/lib/apt/lists/* && \
-    apt-get update --fix-missing && \
-    apt-get install -y --no-install-recommends \
-    libgl1 \
+# Install minimal system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
     libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender1 \
     libgomp1 \
-    libgthread-2.0-0 \
-    && apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements
+# Copy and install Python dependencies
 COPY requirements.txt .
-
-# Upgrade pip and install dependencies
-RUN pip install --no-cache-dir --upgrade pip && \
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
+# Copy application
 COPY . .
 
-# Create uploads directory
+# Create temp directory
 RUN mkdir -p /tmp/uploads
 
-# Expose port
 EXPOSE 10000
 
-# Start command
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-10000}"]
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-10000}
