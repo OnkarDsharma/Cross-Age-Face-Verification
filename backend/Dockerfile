@@ -2,9 +2,13 @@
 
 WORKDIR /app
 
-# Install minimal system dependencies
+# Install system dependencies required for OpenCV
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libglib2.0-0 \
+    libsm6 \
+    libxrender1 \
+    libxext6 \
+    libgl1-mesa-glx \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
