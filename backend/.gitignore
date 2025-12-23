@@ -1,0 +1,9 @@
+﻿__pycache__/
+*.py[cod]
+venv/
+.env
+uploads/*
+!uploads/.gitkeep
+*.log
+test_*.py
+*.h5
