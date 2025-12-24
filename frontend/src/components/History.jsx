@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { api } from '../services/api';
+import { getVerificationHistory } from '../services/api';
 
 function History() {
   const [history, setHistory] = useState([]);
@@ -14,7 +14,7 @@ function History() {
     try {
       setLoading(true);
       setError('');
-      const data = await api.getHistory();
+      const data = await getVerificationHistory();
       setHistory(data);
     } catch (err) {
       setError(err.message || 'Failed to load history');
@@ -23,6 +23,7 @@ function History() {
       setLoading(false);
     }
   };
+
 
   if (loading) {
     return (

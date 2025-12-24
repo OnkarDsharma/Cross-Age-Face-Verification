@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { api } from '../services/api';
+import { verifyFaces } from '../services/api';
 
 function FaceVerification() {
   const [image1, setImage1] = useState(null);
@@ -41,7 +41,8 @@ function FaceVerification() {
     setResult(null);
 
     try {
-      const response = await api.verifyFaces(image1, image2);
+      const response = await verifyFaces(image1, image2);
+
       setResult(response);
     } catch (err) {
       setError(err.message || 'Verification failed');
@@ -49,6 +50,7 @@ function FaceVerification() {
       setLoading(false);
     }
   };
+
 
   const handleReset = () => {
     setImage1(null);

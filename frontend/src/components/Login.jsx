@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { api } from '../services/api';
+import { login } from '../services/api';
 
 function Login({ onLoginSuccess, onSwitchToSignup }) {
   const [username, setUsername] = useState('');
@@ -13,11 +13,10 @@ function Login({ onLoginSuccess, onSwitchToSignup }) {
     setLoading(true);
 
     try {
-      await api.login(username, password);
+      await login(username, password);
       onLoginSuccess();
     } catch (err) {
-      // Fix: Properly extract error message
-      const errorMessage = err.message || 'Login failed. Please try again.';
+      const errorMessage = err.response?.data?.detail || err.message || 'Login failed. Please try again.';
       setError(errorMessage);
       console.error('Login error:', err);
     } finally {

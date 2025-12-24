@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { api } from '../services/api';
+import { signup } from '../services/api';
 
 function Signup({ onSignupSuccess, onSwitchToLogin }) {
   const [email, setEmail] = useState('');
@@ -14,10 +14,11 @@ function Signup({ onSignupSuccess, onSwitchToLogin }) {
     setLoading(true);
 
     try {
-      await api.signup(email, username, password);
+      await signup(email, username, password);
       onSignupSuccess();
     } catch (err) {
-      setError(err.message);
+      const errorMessage = err.response?.data?.detail || err.message || 'Signup failed';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

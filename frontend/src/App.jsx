@@ -3,14 +3,14 @@ import Login from './components/Login';
 import Signup from './components/Signup';
 import FaceVerification from './components/FaceVerification';
 import History from './components/History';
-import { api } from './services/api';
+import { getCurrentUser, logout } from './services/api';
 import './App.css';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showLogin, setShowLogin] = useState(true);
   const [loading, setLoading] = useState(true);
-  const [currentView, setCurrentView] = useState('verify'); // 'verify' or 'history'
+  const [currentView, setCurrentView] = useState('verify');
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -18,13 +18,14 @@ function App() {
   }, []);
 
   const checkAuth = async () => {
-    if (api.isAuthenticated()) {
+    const token = localStorage.getItem('token');
+    if (token) {
       try {
-        const userData = await api.getCurrentUser();
+        const userData = await getCurrentUser();
         setUser(userData);
         setIsAuthenticated(true);
       } catch (error) {
-        api.logout();
+        logout();
         setIsAuthenticated(false);
       }
     }
@@ -32,9 +33,13 @@ function App() {
   };
 
   const handleLoginSuccess = async () => {
-    const userData = await api.getCurrentUser();
-    setUser(userData);
-    setIsAuthenticated(true);
+    try {
+      const userData = await getCurrentUser();
+      setUser(userData);
+      setIsAuthenticated(true);
+    } catch (error) {
+      console.error('Failed to get user data:', error);
+    }
   };
 
   const handleSignupSuccess = () => {
@@ -43,7 +48,7 @@ function App() {
   };
 
   const handleLogout = () => {
-    api.logout();
+    logout();
     setIsAuthenticated(false);
     setUser(null);
   };
@@ -59,12 +64,12 @@ function App() {
 
   if (!isAuthenticated) {
     return showLogin ? (
-      <Login 
+      <Login
         onLoginSuccess={handleLoginSuccess}
         onSwitchToSignup={() => setShowLogin(false)}
       />
     ) : (
-      <Signup 
+      <Signup
         onSignupSuccess={handleSignupSuccess}
         onSwitchToLogin={() => setShowLogin(true)}
       />
@@ -78,7 +83,7 @@ function App() {
           <h1 style={styles.brandTitle}>🔍 Face Verification</h1>
         </div>
         <div style={styles.navMenu}>
-          <button 
+          <button
             onClick={() => setCurrentView('verify')}
             style={{
               ...styles.navBtn,
@@ -87,7 +92,7 @@ function App() {
           >
             Verify
           </button>
-          <button 
+          <button
             onClick={() => setCurrentView('history')}
             style={{
               ...styles.navBtn,
@@ -104,7 +109,7 @@ function App() {
           </button>
         </div>
       </nav>
-      
+
       <main style={styles.main}>
         {currentView === 'verify' ? <FaceVerification /> : <History />}
       </main>
