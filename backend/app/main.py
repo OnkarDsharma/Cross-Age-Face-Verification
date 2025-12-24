@@ -55,7 +55,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://cross-age-face-verification.netlify.app/",
+        "https://cross-age-face-verification.netlify.app",
         "http://localhost:3000",
         "*"  # Temporarily allow all for testing
     ],
