@@ -10,51 +10,78 @@ from ..models import UserInDB
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
-@router.post("/signup", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def signup(user: UserCreate):
-    """Register a new user"""
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+@router.post("/signup", response_model=UserResponse)
+async def signup(user_data: UserCreate):
+    """Create new user account"""
+    from ..database import user_exists, create_user
+    from .utils import get_password_hash
+    
     # Check if user already exists
-    if await user_exists(email=user.email) or await user_exists(username=user.username):
+    if await user_exists(username=user_data.username):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email or username already registered"
+            detail="Username already registered"
         )
     
-    # Create user
-    password_hash = get_password_hash(user.password)
-    new_user = await create_user(user.email, user.username, password_hash)
+    if await user_exists(email=user_data.email):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered"
+        )
     
-    return UserResponse(
-        _id=str(new_user.id),
-        email=new_user.email,
-        username=new_user.username,
-        created_at=new_user.created_at
+    # Hash password
+    hashed_password = get_password_hash(user_data.password)
+    
+    # Create user
+    user = await create_user(
+        email=user_data.email,
+        username=user_data.username,
+        password_hash=hashed_password
     )
+    
+    return user
 
-@router.post("/login", response_model=Token)
-async def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    """Login and get access token (OAuth2 compatible)"""
-    user = await authenticate_user(form_data.username, form_data.password)
+@router.post("/login")
+async def login(login_data: LoginRequest):
+    """Login user and return JWT token"""
+    try:
+        user = await authenticate_user(login_data.username, login_data.password)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect username or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        access_token = create_access_token(data={"sub": login_data.username})
+        
+        return {"access_token": access_token, "token_type": "bearer"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        import logging
+        logging.error(f"Login error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Login failed"
+        )
+
+@router.get("/me", response_model=UserResponse)
+async def get_current_user_info(token: str = Depends(oauth2_scheme)):
+    """Get current user information"""
+    user = await get_current_user(token)
+    
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
+            detail="Could not validate credentials"
         )
     
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
-    )
-    
-    return {"access_token": access_token, "token_type": "bearer"}
-
-@router.get("/me", response_model=UserResponse)
-async def read_users_me(current_user: UserInDB = Depends(get_current_user)):
-    """Get current user information"""
-    return UserResponse(
-        _id=str(current_user.id),
-        email=current_user.email,
-        username=current_user.username,
-        created_at=current_user.created_at
-    )
+    return user
