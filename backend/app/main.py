@@ -55,16 +55,14 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://cross-age-face-verification.netlify.app",  # Will be updated with actual URL
-        "https://face-verification-api-qnne.onrender.com/"
+        "https://cross-age-face-verification.netlify.app",
         "http://localhost:3000",
-        "http://127.0.0.1:3000"
+        "*"  # Temporarily allow all for testing
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 # Include routers
 app.include_router(auth_router)
 app.include_router(verify_router)
