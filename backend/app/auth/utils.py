@@ -86,10 +86,8 @@ async def authenticate_user(username: str, password: str):
         return False
 
 
-async def get_current_user(token: str):
+async def get_current_user(token: str = Depends(oauth2_scheme)):
     """Get current user from JWT token"""
-    from fastapi import HTTPException, status
-    
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -103,7 +101,8 @@ async def get_current_user(token: str):
         if username is None:
             raise credentials_exception
             
-    except JWTError:
+    except JWTError as e:
+        logger.error(f"JWT decode error: {e}")
         raise credentials_exception
     
     user = await get_user_by_username(username)
