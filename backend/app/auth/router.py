@@ -1,14 +1,8 @@
-from datetime import timedelta
-from fastapi import APIRouter, HTTPException, status, Depends
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from ..schemas import Token, LoginRequest
-from ..models import UserCreate, UserResponse
-from ..database import user_exists, create_user
-from .utils import authenticate_user, create_access_token, get_current_user, get_password_hash
-from ..config import settings
-from ..models import UserInDB
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
-
+from .utils import authenticate_user, create_access_token, get_current_user
+from ..schemas import UserCreate, UserResponse
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
