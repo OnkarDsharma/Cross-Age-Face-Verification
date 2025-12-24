@@ -3,6 +3,7 @@ from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
 from .utils import authenticate_user, create_access_token, get_current_user
 from ..schemas import UserCreate, UserResponse
+from ..models import UserInDB
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
@@ -70,14 +71,6 @@ async def login(login_data: LoginRequest):
         )
 
 @router.get("/me", response_model=UserResponse)
-async def get_current_user_info(token: str = Depends(oauth2_scheme)):
+async def get_current_user_info(current_user: UserInDB = Depends(get_current_user)):
     """Get current user information"""
-    user = await get_current_user(token)
-    
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials"
-        )
-    
-    return user
+    return current_user
