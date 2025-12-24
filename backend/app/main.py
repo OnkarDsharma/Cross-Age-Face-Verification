@@ -51,18 +51,21 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# CORS middleware - UPDATE WITH YOUR NETLIFY URL
+# CORS Configuration - CRITICAL: Must be before route includes
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://cross-age-face-verification.netlify.app",
+        "https://cross-age-face-verification.netlify.app",  # NO trailing slash!
         "http://localhost:3000",
-        "*"  # Temporarily allow all for testing
+        "http://localhost:3001"
     ],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=3600,
 )
+
 # Include routers
 app.include_router(auth_router)
 app.include_router(verify_router)
