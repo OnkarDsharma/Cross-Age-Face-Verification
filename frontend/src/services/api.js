@@ -7,6 +7,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 120000, // 120 seconds (2 minutes) for ML model loading
 });
 
 // Add token to requests if available
@@ -77,6 +78,7 @@ export const verifyFaces = async (image1, image2) => {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
+    timeout: 120000, // 2 minutes for first-time model loading
   });
 
   return response.data;

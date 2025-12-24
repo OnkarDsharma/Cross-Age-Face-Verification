@@ -42,15 +42,15 @@ function FaceVerification() {
 
     try {
       const response = await verifyFaces(image1, image2);
-
       setResult(response);
     } catch (err) {
-      setError(err.message || 'Verification failed');
+      const errorMessage = err.response?.data?.detail || err.message || 'Verification failed';
+      setError(errorMessage);
+      console.error('Verification error:', err);
     } finally {
       setLoading(false);
     }
   };
-
 
   const handleReset = () => {
     setImage1(null);
@@ -137,6 +137,19 @@ function FaceVerification() {
           🔄 Reset
         </button>
       </div>
+
+      {loading && (
+        <div style={styles.loadingBox}>
+          <div style={styles.spinner}></div>
+          <p style={styles.loadingText}>
+            <strong>Processing your verification...</strong>
+          </p>
+          <p style={styles.loadingSubtext}>
+            This may take up to 2 minutes on first use while loading the AI model. 
+            Subsequent verifications will be much faster!
+          </p>
+        </div>
+      )}
 
       {error && (
         <div style={styles.error}>
@@ -276,6 +289,33 @@ const styles = {
     fontWeight: '600',
     cursor: 'pointer',
   },
+  loadingBox: {
+    background: '#e7f3ff',
+    border: '2px solid #2196F3',
+    borderRadius: '10px',
+    padding: '30px',
+    textAlign: 'center',
+    marginBottom: '20px',
+  },
+  spinner: {
+    border: '4px solid #f3f3f3',
+    borderTop: '4px solid #667eea',
+    borderRadius: '50%',
+    width: '50px',
+    height: '50px',
+    animation: 'spin 1s linear infinite',
+    margin: '0 auto 20px',
+  },
+  loadingText: {
+    color: '#1976D2',
+    fontSize: '18px',
+    marginBottom: '10px',
+  },
+  loadingSubtext: {
+    color: '#666',
+    fontSize: '14px',
+    margin: 0,
+  },
   error: {
     background: '#f8d7da',
     color: '#721c24',
@@ -314,5 +354,15 @@ const styles = {
     transition: 'width 0.3s ease',
   }
 };
+
+// Add CSS animation for spinner
+const styleSheet = document.createElement("style");
+styleSheet.textContent = `
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+document.head.appendChild(styleSheet);
 
 export default FaceVerification;

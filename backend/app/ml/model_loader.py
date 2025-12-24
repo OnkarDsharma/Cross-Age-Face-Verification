@@ -1,91 +1,91 @@
 from deepface import DeepFace
+from ..config import settings
 import logging
 import os
+import numpy as np
+from PIL import Image
+import io
 
 logger = logging.getLogger(__name__)
 
-class FaceVerificationModel:
-    def __init__(self, threshold: float = 0.4, model_name: str = "Facenet512"):
-        """
-        Initialize DeepFace-based face verification
-        
-        Args:
-            threshold: Distance threshold for matching (lower = stricter)
-            model_name: DeepFace model to use (Facenet512, VGG-Face, ArcFace, etc.)
-        """
-        self.threshold = threshold
-        self.model_name = model_name
-        logger.info(f"Initialized FaceVerification with {model_name}, threshold={threshold}")
+# Global model cache
+_model_cache = None
+
+def preload_model():
+    """Preload the model during startup to avoid timeout on first request"""
+    global _model_cache
     
-    def verify_faces(self, image1_path: str, image2_path: str):
-        """
-        Verify if two face images are of the same person using DeepFace
-        
-        Args:
-            image1_path: Path to first image
-            image2_path: Path to second image
-            
-        Returns:
-            tuple: (result, confidence) where result is 'match' or 'no_match'
-        """
-        try:
-            logger.info(f"Verifying faces: {image1_path} vs {image2_path}")
-            
-            # Use DeepFace to verify
-            result = DeepFace.verify(
-                img1_path=image1_path,
-                img2_path=image2_path,
-                model_name=self.model_name,
-                enforce_detection=False,  # Don't fail if face detection fails
-                distance_metric="cosine"
-            )
-            
-            # Extract distance and verification result
-            distance = result["distance"]
-            
-            # Convert distance to confidence score (0-1)
-            # Lower distance = higher confidence
-            # For cosine similarity, distance is typically 0-1
-            confidence = 1 - min(distance, 1.0)
-            confidence = max(0.0, min(1.0, confidence))
-            
-            # Determine result
-            match_result = "match" if distance <= self.threshold else "no_match"
-            
-            logger.info(f"Distance: {distance:.4f}, Confidence: {confidence:.4f}, Threshold: {self.threshold}")
-            logger.info(f"Result: {match_result} (distance {'<=' if distance <= self.threshold else '>'} threshold)")
-            
-            return match_result, float(confidence)
-            
-            
-        except Exception as e:
-            logger.error(f"Error during face verification: {e}")
-            logger.warning("Verification failed, returning no_match")
-            return "no_match", 0.0
-
-
-# Global model instance
-_model_instance = None
-
-def get_model(threshold: float = None, model_name: str = None):
-    """Get or create the model instance"""
-    global _model_instance
+    logger.info(f"Preloading {settings.DEEPFACE_MODEL} model...")
     
-    if _model_instance is None:
-        from ..config import settings
+    try:
+        # Create a dummy image to force model loading
+        dummy_image = np.zeros((224, 224, 3), dtype=np.uint8)
         
-        threshold = threshold or settings.VERIFICATION_THRESHOLD
-        model_name = model_name or getattr(settings, 'DEEPFACE_MODEL', 'Facenet512')
+        # This will download and load the model
+        DeepFace.represent(
+            img_path=dummy_image,
+            model_name=settings.DEEPFACE_MODEL,
+            enforce_detection=False
+        )
         
-        _model_instance = FaceVerificationModel(threshold, model_name)
-    
-    return _model_instance
-
-
+        _model_cache = True
+        logger.info(f"✓ {settings.DEEPFACE_MODEL} model loaded and cached")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Error preloading model: {e}")
+        return False
 
 def verify_faces(image1_path: str, image2_path: str):
     """
-    Convenience function to verify faces using the global model instance
+    Verify if two face images belong to the same person
+    
+    Args:
+        image1_path: Path to first image
+        image2_path: Path to second image
+        
+    Returns:
+        tuple: (result, confidence_score)
+            - result: "match" or "no_match"
+            - confidence_score: float between 0 and 1
     """
-    model = get_model()
-    return model.verify_faces(image1_path, image2_path)
+    logger.info(f"Initialized FaceVerification with {settings.DEEPFACE_MODEL}, threshold={settings.VERIFICATION_THRESHOLD}")
+    logger.info(f"Verifying faces: {image1_path} vs {image2_path}")
+    
+    try:
+        # Verify faces using DeepFace
+        result = DeepFace.verify(
+            img1_path=image1_path,
+            img2_path=image2_path,
+            model_name=settings.DEEPFACE_MODEL,
+            enforce_detection=True,
+            distance_metric="cosine"
+        )
+        
+        # Extract results
+        distance = result.get("distance", 1.0)
+        threshold = result.get("threshold", settings.VERIFICATION_THRESHOLD)
+        is_match = result.get("verified", False)
+        
+        # Calculate confidence score (inverse of distance, normalized)
+        # Lower distance = higher confidence
+        confidence_score = max(0.0, min(1.0, 1 - (distance / threshold)))
+        
+        # Determine result
+        verification_result = "match" if is_match else "no_match"
+        
+        logger.info(f"Verification result: {verification_result}")
+        logger.info(f"Distance: {distance:.4f}, Threshold: {threshold:.4f}")
+        logger.info(f"Confidence: {confidence_score:.4f}")
+        
+        return verification_result, confidence_score
+        
+    except Exception as e:
+        logger.error(f"Face verification error: {str(e)}")
+        
+        # If no face detected, return no_match with low confidence
+        if "Face could not be detected" in str(e):
+            logger.warning("No face detected in one or both images")
+            return "no_match", 0.0
+        
+        raise Exception(f"Verification failed: {str(e)}")

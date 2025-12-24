@@ -27,6 +27,16 @@ async def lifespan(app: FastAPI):
     await connect_to_mongo()
     logger.info("✓ Database connected")
     
+    # Preload ML model to avoid timeout on first request
+    logger.info("Preloading ML model...")
+    try:
+        from .ml.model_loader import preload_model
+        preload_model()
+        logger.info("✓ ML model preloaded successfully")
+    except Exception as e:
+        logger.warning(f"⚠ Could not preload model: {e}")
+        logger.warning("Model will be loaded on first verification request")
+    
     # Log configuration
     logger.info(f"✓ DeepFace model: {settings.DEEPFACE_MODEL}")
     logger.info(f"✓ Verification threshold: {settings.VERIFICATION_THRESHOLD}")
@@ -51,11 +61,11 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# CORS Configuration - CRITICAL: Must be before route includes
+# CORS Configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://cross-age-face-verification.netlify.app",  # NO trailing slash!
+        "https://cross-age-face-verification.netlify.app",
         "http://localhost:3000",
         "http://localhost:3001"
     ],
